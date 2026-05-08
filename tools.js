@@ -1,10 +1,10 @@
-const express = require('express');
-const cors = require('cors');
-const { spawn } = require('child_process');
-const xml2js = require('xml2js');
-const { z } = require('zod');
+const express = require("express");
+const cors = require("cors");
+const { spawn } = require("child_process");
+const xml2js = require("xml2js");
+const { z } = require("zod");
 
-const { GoogleGenAI } = require('@google/genai');
+const { GoogleGenAI } = require("@google/genai");
 
 const app = express();
 
@@ -50,7 +50,7 @@ function isValidDomain(domain) {
  */
 
 function buildNmapArgs(domain) {
-  return ['-sV', '-Pn', '-T4', '-oX', '-', domain];
+  return ["-sV", "-Pn", "-T4", "-oX", "-", domain];
 }
 
 /**
@@ -61,18 +61,18 @@ function executeCommand(tool, args) {
   return new Promise((resolve, reject) => {
     const child = spawn(tool, args);
 
-    let output = '';
-    let errorOutput = '';
+    let output = "";
+    let errorOutput = "";
 
-    child.stdout.on('data', (data) => {
+    child.stdout.on("data", (data) => {
       output += data.toString();
     });
 
-    child.stderr.on('data', (data) => {
+    child.stderr.on("data", (data) => {
       errorOutput += data.toString();
     });
 
-    child.on('close', (code) => {
+    child.on("close", (code) => {
       if (code !== 0) {
         return reject(errorOutput);
       }
@@ -132,34 +132,34 @@ async function parseNmapXml(xml) {
 
 function generateLocalSummary(scan) {
   const openPorts = scan.ports
-    .filter((p) => p.state === 'open')
+    .filter((p) => p.state === "open")
     .map((p) => String(p.port));
 
   let riskScore = 10;
 
-  if (openPorts.includes('22')) {
+  if (openPorts.includes("22")) {
     riskScore += 15;
   }
 
-  if (openPorts.includes('3389')) {
+  if (openPorts.includes("3389")) {
     riskScore += 40;
   }
 
-  if (openPorts.includes('8443')) {
+  if (openPorts.includes("8443")) {
     riskScore += 10;
   }
 
   return {
-    executive_summary: 'Target exposes multiple network services.',
+    executive_summary: "Target exposes multiple network services.",
 
-    risk_assessment: 'Cloud/web-related services detected.',
+    risk_assessment: "Cloud/web-related services detected.",
 
     exposed_services: openPorts,
 
     recommendations: [
-      'Review exposed services',
-      'Close unnecessary ports',
-      'Monitor administrative endpoints',
+      "Review exposed services",
+      "Close unnecessary ports",
+      "Monitor administrative endpoints",
     ],
 
     risk_score: riskScore,
@@ -200,7 +200,7 @@ Data:
 ${JSON.stringify(scanData, null, 2)}
 `;
 
-  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
 
   for (const model of models) {
     try {
@@ -210,7 +210,7 @@ ${JSON.stringify(scanData, null, 2)}
         contents: prompt,
 
         config: {
-          responseMimeType: 'application/json',
+          responseMimeType: "application/json",
         },
       });
 
@@ -221,8 +221,8 @@ ${JSON.stringify(scanData, null, 2)}
        */
 
       const cleaned = raw
-        .replace(/```json/g, '')
-        .replace(/```/g, '')
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
         .trim();
 
       /**
@@ -257,6 +257,7 @@ ${JSON.stringify(scanData, null, 2)}
  */
 
 module.exports = async function scanner(body) {
+  console.log("Scanner received:", body);
   try {
     const { domain } = body;
 
@@ -278,7 +279,7 @@ module.exports = async function scanner(body) {
 
     const nmapArgs = buildNmapArgs(domain);
 
-    const xmlResult = await executeCommand('nmap', nmapArgs);
+    const xmlResult = await executeCommand("nmap", nmapArgs);
 
     /**
      * PARSE XML
