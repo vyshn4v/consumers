@@ -256,10 +256,10 @@ ${JSON.stringify(scanData, null, 2)}
  * MAIN API
  */
 
-module.exports = async function scanner(body) {
-  console.log("Scanner received:", body);
+module.exports = async function scanner({ data }) {
+  console.log("Scanner received:", data);
   try {
-    const { domain } = body;
+    const { domain } = data;
 
     /**
      * VALIDATION
