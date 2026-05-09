@@ -35,76 +35,11 @@ const AiSummarySchema = z.object({
   risk_score: z.number(),
 
   graph_data: z.object({
-    severity_breakdown: z.object({
-      critical: z.number(),
-      high: z.number(),
-      medium: z.number(),
-      low: z.number(),
-    }),
-
-    port_state_chart: z.array(
-      z.object({
-        name: z.string(),
-        value: z.number(),
-      }),
-    ),
-
-    service_chart: z.array(
-      z.object({
-        service: z.string(),
-        count: z.number(),
-      }),
-    ),
-
     service_risk_chart: z.array(
       z.object({
         service: z.string(),
         risk_score: z.number(),
-      }),
-    ),
-
-    risk_heatmap: z.array(
-      z.object({
-        port: z.number(),
-        service: z.string(),
-        risk: z.number(),
-      }),
-    ),
-
-    radar_data: z.array(
-      z.object({
-        category: z.string(),
-        score: z.number(),
-      }),
-    ),
-
-    vulnerability_timeline: z.array(
-      z.object({
-        date: z.string(),
-        vulnerabilities: z.number(),
-        risk_score: z.number(),
-      }),
-    ),
-
-    protocol_distribution: z.array(
-      z.object({
-        protocol: z.string(),
-        count: z.number(),
-      }),
-    ),
-
-    port_range_distribution: z.array(
-      z.object({
-        range: z.string(),
-        count: z.number(),
-      }),
-    ),
-
-    service_version_chart: z.array(
-      z.object({
-        service: z.string(),
-        version: z.string(),
-        count: z.number(),
+        count: z.number().optional(),
       }),
     ),
 
@@ -419,13 +354,18 @@ function generateGraphData(scan) {
   /**
    * RISK TREND
    */
+  const baselineRisk = Math.min(
+    100,
+    openPorts.length * 7 + severity.high * 8 + severity.critical * 15,
+  );
+
   const riskTrend = [
-    { time: "00:00", risk_level: Math.floor(Math.random() * 30) + 20 },
-    { time: "04:00", risk_level: Math.floor(Math.random() * 40) + 30 },
-    { time: "08:00", risk_level: Math.floor(Math.random() * 50) + 40 },
-    { time: "12:00", risk_level: Math.floor(Math.random() * 60) + 50 },
-    { time: "16:00", risk_level: Math.floor(Math.random() * 70) + 60 },
-    { time: "20:00", risk_level: Math.floor(Math.random() * 80) + 70 },
+    { time: "00:00", risk_level: Math.max(15, baselineRisk - 24) },
+    { time: "04:00", risk_level: Math.max(18, baselineRisk - 18) },
+    { time: "08:00", risk_level: Math.max(24, baselineRisk - 12) },
+    { time: "12:00", risk_level: Math.max(32, baselineRisk - 8) },
+    { time: "16:00", risk_level: Math.max(40, baselineRisk - 4) },
+    { time: "20:00", risk_level: baselineRisk },
   ];
 
   return {
@@ -448,10 +388,31 @@ function generateGraphData(scan) {
 
     service_chart: serviceChart,
 
-    service_risk_chart: Object.entries(serviceMap).map(([service, count]) => ({
-      service,
-      risk_score: Math.min(100, 15 + count * 20),
-    })),
+    service_risk_chart: Object.entries(serviceMap)
+      .map(([service, count]) => {
+        const name = String(service || "unknown");
+        const normalized = name.toLowerCase();
+        let base = 40;
+
+        if (/(ssh|22)/.test(normalized)) {
+          base = 85;
+        } else if (/(rdp|3389)/.test(normalized)) {
+          base = 95;
+        } else if (/(mysql|postgres|mariadb|3306|5432)/.test(normalized)) {
+          base = 80;
+        } else if (/(http|https|web|80|443|8080|8443)/.test(normalized)) {
+          base = 55;
+        } else if (/(smtp|ftp|telnet|snmp)/.test(normalized)) {
+          base = 75;
+        }
+
+        return {
+          service: name,
+          count,
+          risk_score: Math.min(100, base + count * 10),
+        };
+      })
+      .sort((a, b) => b.risk_score - a.risk_score),
 
     risk_heatmap: riskHeatmap,
 
@@ -562,177 +523,36 @@ async function generateSummary(scanData) {
 
       graph_data: {
         type: "object",
+        additionalProperties: false,
 
         properties: {
-          severity_breakdown: {
-            type: "object",
-
-            properties: {
-              critical: { type: "number" },
-              high: { type: "number" },
-              medium: { type: "number" },
-              low: { type: "number" },
-            },
-
-            required: ["critical", "high", "medium", "low"],
-          },
-
-          port_state_chart: {
-            type: "array",
-
-            items: {
-              type: "object",
-
-              properties: {
-                name: { type: "string" },
-                value: { type: "number" },
-              },
-
-              required: ["name", "value"],
-            },
-          },
-
-          service_chart: {
-            type: "array",
-
-            items: {
-              type: "object",
-
-              properties: {
-                service: { type: "string" },
-                count: { type: "number" },
-              },
-
-              required: ["service", "count"],
-            },
-          },
-
           service_risk_chart: {
             type: "array",
-
             items: {
               type: "object",
-
               properties: {
                 service: { type: "string" },
                 risk_score: { type: "number" },
+                count: { type: "number" },
               },
-
               required: ["service", "risk_score"],
-            },
-          },
-
-          risk_heatmap: {
-            type: "array",
-
-            items: {
-              type: "object",
-
-              properties: {
-                port: { type: "number" },
-                service: { type: "string" },
-                risk: { type: "number" },
-              },
-
-              required: ["port", "service", "risk"],
-            },
-          },
-
-          radar_data: {
-            type: "array",
-
-            items: {
-              type: "object",
-
-              properties: {
-                category: { type: "string" },
-                score: { type: "number" },
-              },
-
-              required: ["category", "score"],
-            },
-          },
-
-          vulnerability_timeline: {
-            type: "array",
-
-            items: {
-              type: "object",
-
-              properties: {
-                date: { type: "string" },
-                vulnerabilities: { type: "number" },
-                risk_score: { type: "number" },
-              },
-
-              required: ["date", "vulnerabilities", "risk_score"],
-            },
-          },
-
-          protocol_distribution: {
-            type: "array",
-
-            items: {
-              type: "object",
-
-              properties: {
-                protocol: { type: "string" },
-                count: { type: "number" },
-              },
-
-              required: ["protocol", "count"],
-            },
-          },
-
-          port_range_distribution: {
-            type: "array",
-
-            items: {
-              type: "object",
-
-              properties: {
-                range: { type: "string" },
-                count: { type: "number" },
-              },
-
-              required: ["range", "count"],
-            },
-          },
-
-          service_version_chart: {
-            type: "array",
-
-            items: {
-              type: "object",
-
-              properties: {
-                service: { type: "string" },
-                version: { type: "string" },
-                count: { type: "number" },
-              },
-
-              required: ["service", "version", "count"],
             },
           },
 
           risk_trend: {
             type: "array",
-
             items: {
               type: "object",
-
               properties: {
                 time: { type: "string" },
                 risk_level: { type: "number" },
               },
-
               required: ["time", "risk_level"],
             },
           },
 
           attack_surface: {
             type: "object",
-
             properties: {
               total_ports: { type: "number" },
               open_ports: { type: "number" },
@@ -740,7 +560,6 @@ async function generateSummary(scanData) {
               filtered_ports: { type: "number" },
               risky_ports: { type: "number" },
             },
-
             required: [
               "total_ports",
               "open_ports",
@@ -751,20 +570,7 @@ async function generateSummary(scanData) {
           },
         },
 
-        required: [
-          "severity_breakdown",
-          "port_state_chart",
-          "service_chart",
-          "service_risk_chart",
-          "risk_heatmap",
-          "radar_data",
-          "vulnerability_timeline",
-          "protocol_distribution",
-          "port_range_distribution",
-          "service_version_chart",
-          "risk_trend",
-          "attack_surface",
-        ],
+        required: ["service_risk_chart", "risk_trend", "attack_surface"],
       },
     },
 
@@ -781,47 +587,28 @@ async function generateSummary(scanData) {
   const prompt = `
 You are a senior cybersecurity analyst.
 
-Analyze this reconnaissance result.
+Analyze this reconnaissance result with an advanced risk focus.
 
 IMPORTANT:
 Return ONLY valid JSON matching the provided schema.
-
-Generate frontend-ready dashboard analytics.
+Do not include extra graph arrays or unrelated data.
 
 graph_data must include:
-- severity breakdown
-- service chart
-- service risk chart
-- heatmap
-- radar chart
-- vulnerability timeline (historical vulnerability data)
-- protocol distribution (TCP/UDP breakdown)
-- port range distribution (well-known, registered, dynamic ports)
-- service version chart (service versions and counts)
-- risk trend (time-based risk levels)
-- attack surface metrics
-- chart-compatible arrays
+- service_risk_chart: advanced risk score for each exposed service
+- risk_trend: time-series scan risk profile
+- attack_surface: summary of total, open, closed, filtered, and risky ports
 
 Requirements:
-- executive_summary should explain the exposure briefly
-- risk_assessment should explain the overall security posture
-- exposed_services must contain detected risky/exposed services
-- recommendations must provide remediation suggestions
+- executive_summary should explain the exposure and risk posture clearly
+- risk_assessment should describe overall security severity
+- exposed_services must list the most exposed risky services
+- recommendations must provide strong remediation actions
 - risk_score must be a number between 0-100
 
-Risk Guidelines:
-- RDP (3389) = critical
-- SSH (22) = medium/high
-- Database services = medium
-- Multiple exposed services increase risk
-- Administrative services increase risk
-
-For new graphs:
-- vulnerability_timeline: Generate realistic historical data points
-- protocol_distribution: Count TCP vs UDP protocols
-- port_range_distribution: Categorize ports by IANA ranges
-- service_version_chart: Include detected service versions
-- risk_trend: Generate time-series risk data
+Focus:
+- prioritize dangerous services and their likelihood of exploitation
+- show whether the scan risk is rising, stable, or dropping over time
+- avoid introducing secondary charts like protocol distribution or port version grids
 
 NO markdown.
 NO explanations.
