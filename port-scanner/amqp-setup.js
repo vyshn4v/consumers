@@ -31,7 +31,7 @@ async function consumeMessages() {
         // Run your process here
         const response = await scanner(data);
         await db.query(
-          'INSERT INTO scan_results (scan_id, "resultData", updatedAt) VALUES ($1, $2, NOW())',
+          'INSERT INTO scan_results (scan_id, "resultData", "updatedAt") VALUES ($1, $2, NOW())',
           [scanId, response],
         );
 
