@@ -1,6 +1,7 @@
 const amqp = require("amqplib");
 const scanner = require("./tools");
-const Scan = require("./db.setup");
+// const Scan = require("./db.setup");
+const db = require("./db.setup");
 async function consumeMessages() {
   try {
     const connection = await amqp.connect(
@@ -29,9 +30,10 @@ async function consumeMessages() {
 
         // Run your process here
         const response = await scanner(data);
-        await Scan.create({
-          ...response,
-        });
+        await db.query(
+          "INSERT INTO scan_results (scan_id, resultData) VALUES ($1, $2)",
+          [data?.scan_id, JSON.stringify(response)],
+        );
 
         channel.ack(msg);
       } catch (err) {
