@@ -25,14 +25,14 @@ async function consumeMessages() {
 
       try {
         const data = JSON.parse(msg.content.toString());
-
+        const scanId = data?.data?.scan_id;
         console.log("Received:", data);
 
         // Run your process here
         const response = await scanner(data);
         await db.query(
-          'INSERT INTO scan_results (scan_id, "resultData") VALUES ($1, $2)',
-          [data?.scan_id, response],
+          'INSERT INTO scan_results (scan_id, "resultData", updatedAt) VALUES ($1, $2, NOW())',
+          [scanId, response],
         );
 
         channel.ack(msg);
