@@ -32,7 +32,7 @@ async function consumeMessages() {
         const response = await scanner(data);
         await db.query(
           "INSERT INTO scan_results (scan_id, resultData) VALUES ($1, $2)",
-          [data?.scan_id, JSON.stringify(response)],
+          [data?.scan_id, response],
         );
 
         channel.ack(msg);
