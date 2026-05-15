@@ -35,13 +35,13 @@ async function consumeMessages() {
   INSERT INTO scan_results (
     scan_id,
     "resultData",
-    "updatedAt"
+    "updated_at"
   )
   VALUES ($1, $2, NOW())
   ON CONFLICT (scan_id)
   DO UPDATE SET
     "resultData" = EXCLUDED."resultData",
-    "updatedAt" = NOW()
+    "updated_at" = NOW()
   `,
           [scanId, response],
         );
