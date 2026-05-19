@@ -34,7 +34,7 @@ async function consumeMessages() {
         updated_at = NOW()
     WHERE id = $1
   `,
-          [scanId, "Processing"],
+          [scanId, "running"],
         );
         // Run your process here
         const response = await scanner(data);
@@ -61,7 +61,7 @@ async function consumeMessages() {
         updated_at = NOW()
     WHERE id = $1
   `,
-          [scanId, "Done"],
+          [scanId, "completed"],
         );
         await db.query("COMMIT");
         channel.ack(msg);
