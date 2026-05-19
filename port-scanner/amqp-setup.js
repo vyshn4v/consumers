@@ -27,9 +27,18 @@ async function consumeMessages() {
         const data = JSON.parse(msg.content.toString());
         const scanId = data?.data?.scan_id;
         console.log("Received:", data);
-
+        await db.query(
+          `
+    UPDATE scans
+    SET status = $2,
+        updated_at = NOW()
+    WHERE id = $1
+  `,
+          [scanId, "Processing"],
+        );
         // Run your process here
         const response = await scanner(data);
+        await db.query("BEGIN");
         await db.query(
           `
   INSERT INTO scan_results (
@@ -45,7 +54,16 @@ async function consumeMessages() {
   `,
           [scanId, response],
         );
-
+        await db.query(
+          `
+    UPDATE scans
+    SET status = $2,
+        updated_at = NOW()
+    WHERE id = $1
+  `,
+          [scanId, "Done"],
+        );
+        await db.query("COMMIT");
         channel.ack(msg);
       } catch (err) {
         console.error(err);
