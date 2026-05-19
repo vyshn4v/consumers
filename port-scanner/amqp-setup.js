@@ -23,10 +23,10 @@ async function consumeMessages() {
     channel.consume(queue, async (msg) => {
       if (!msg) return;
 
+      const data = JSON.parse(msg.content.toString());
+      const scanId = data?.data?.scan_id;
+      console.log("Received:", data);
       try {
-        const data = JSON.parse(msg.content.toString());
-        const scanId = data?.data?.scan_id;
-        console.log("Received:", data);
         await db.query(
           `
     UPDATE scans
@@ -38,22 +38,49 @@ async function consumeMessages() {
         );
         // Run your process here
         const response = await scanner(data);
-        await db.query("BEGIN");
-        await db.query(
-          `
-  INSERT INTO scan_results (
-    scan_id,
-    "resultData",
-    "updated_at"
-  )
-  VALUES ($1, $2, NOW())
-  ON CONFLICT (scan_id)
-  DO UPDATE SET
-    "resultData" = EXCLUDED."resultData",
+        if (response.success) {
+          await db.query("BEGIN");
+          await db.query(
+            `
+            INSERT INTO scan_results (
+              scan_id,
+              "resultData",
+              "updated_at"
+              )
+              VALUES ($1, $2, NOW())
+              ON CONFLICT (scan_id)
+              DO UPDATE SET
+              "resultData" = EXCLUDED."resultData",
     "updated_at" = NOW()
+    `,
+            [scanId, response],
+          );
+          await db.query(
+            `
+          UPDATE scans
+          SET status = $2,
+          updated_at = NOW()
+          WHERE id = $1
+          `,
+            [scanId, "completed"],
+          );
+          await db.query("COMMIT");
+          channel.ack(msg);
+        } else {
+          await db.query(
+            `
+    UPDATE scans
+    SET status = $2,
+        updated_at = NOW()
+    WHERE id = $1
   `,
-          [scanId, response],
-        );
+            [scanId, "failed"],
+          );
+          channel.nack(msg, false, false);
+        }
+      } catch (err) {
+        console.error(err);
+        await db.query("ROLLBACK");
         await db.query(
           `
     UPDATE scans
@@ -61,13 +88,8 @@ async function consumeMessages() {
         updated_at = NOW()
     WHERE id = $1
   `,
-          [scanId, "completed"],
+          [scanId, "failed"],
         );
-        await db.query("COMMIT");
-        channel.ack(msg);
-      } catch (err) {
-        console.error(err);
-
         channel.nack(msg, false, false);
       }
     });

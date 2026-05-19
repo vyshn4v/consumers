@@ -669,7 +669,7 @@ ${JSON.stringify(scanData, null, 2)}
    * FALLBACK
    */
 
-  return generateLocalSummary(scanData);
+  throw new Error("All Gemini models failed to generate a valid summary");
 }
 
 /**
