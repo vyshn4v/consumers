@@ -1,5 +1,6 @@
 const { GoogleGenAI } = require("@google/genai");
 const { z } = require("zod");
+const { generateWithFallback } = require("../../shared/ai-helper");
 
 /**
  * GEMINI CLIENT
@@ -64,34 +65,7 @@ Scan Data:
 ${JSON.stringify(scanData, null, 2)}
 `;
 
-  const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
-
-  for (const model of models) {
-    try {
-      const response = await ai.models.generateContent({
-        model,
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema,
-        },
-      });
-
-      const raw = response.text;
-      const cleaned = raw
-        .replace(/```json/g, "")
-        .replace(/```/g, "")
-        .trim();
-      const parsed = JSON.parse(cleaned);
-      const validated = AiSummarySchema.parse(parsed);
-
-      return validated;
-    } catch (err) {
-      console.error(`Gemini model failed: ${model}`, err.message);
-    }
-  }
-
-  throw new Error("All Gemini models failed to generate a valid summary");
+  return generateWithFallback(ai, prompt, responseSchema, AiSummarySchema);
 }
 
 module.exports = {
