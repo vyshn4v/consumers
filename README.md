@@ -14,6 +14,8 @@ Each scanner is organized into modular subdirectories:
 - `services/`: Core logic (AI, Nmap, Graph Data, SSL).
 - `tools/`: Main scanner orchestrators.
 
+Additionally, a `shared/` directory at the root provides shared utilities (like AI model fallback logic) used across multiple scanners.
+
 ## Development & AI Guidelines
 Please refer to [agent.md](file:///c:/resume_project/amqp-client/agent.md) for the rules and constraints governing AI contributions to this repository.
 
