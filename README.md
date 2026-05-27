@@ -20,6 +20,16 @@ Additionally, a `shared/` directory at the root provides shared utilities (like 
 Please refer to [agent.md](file:///c:/resume_project/amqp-client/agent.md) for the rules and constraints governing AI contributions to this repository.
 
 ## Getting Started
+
+### Prerequisites
+- **Node.js** (v20+ recommended)
+- **RabbitMQ** server running locally or remotely
+- **Nmap**: The `port-scanner` requires the `nmap` CLI tool to be installed on your system.
+  - **Ubuntu/Debian**: `sudo apt-get install nmap`
+  - **MacOS**: `brew install nmap`
+  - **Windows**: Download the installer from [nmap.org/download](https://nmap.org/download.html)
+
+### Installation
 Each scanner is an independent Node.js project. To run them locally, navigate into their respective directories and install the dependencies.
 
 ```bash
