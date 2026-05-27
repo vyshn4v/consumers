@@ -11,6 +11,7 @@ This document outlines the scope, rules, and best practices for AI agents operat
 3. **Always Commit Changes**: The AI must always commit its changes (via `git`) once a task or logical unit of work is successfully completed and verified.
 4. **Clean Repository & Secret Management**: Keep the repository clean. The AI must strictly avoid reading `.env` files or exposing sensitive information during its operations.
 5. **Algorithmic Optimization**: Try to optimize the code using industry-level Data Structures and Algorithms (DSA) approaches, prioritizing efficiency without severely compromising the readability requirement (Rule 1).
+6. **Semantic Git Commits**: When making git commits, use semantic commit messages (e.g., `feat`, `fix`, `chore`, `release`) and include the folder name in parentheses to clarify where the changes were made (e.g., `feat(components): add new button`).
 
 ### Non-Technical
 
