@@ -6,10 +6,8 @@ async function consumeMessages() {
     const connection = await amqp.connect(
       process.env.AMQP_URL || "amqp://localhost:5672",
     );
-
     const channel = await connection.createChannel();
-
-    const queue = "scan_queue";
+    const queue = process.env.QUEUE_NAME || "scan_queue";
 
     await channel.assertQueue(queue, {
       durable: true,

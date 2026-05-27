@@ -12,7 +12,7 @@ async function consumeMessages() {
 
     const channel = await connection.createChannel();
 
-    const queue = "domain_scan_queue";
+    const queue = process.env.QUEUE_NAME || "domain_scan_queue";
 
     await channel.assertQueue(queue, {
       durable: true,
