@@ -1,7 +1,6 @@
 const amqp = require("amqplib");
-const scanner = require("./tools");
-// const Scan = require("./db.setup");
-const db = require("./db.setup");
+const scanner = require("../tools/tools");
+const db = require("../db/db.setup");
 async function consumeMessages() {
   try {
     const connection = await amqp.connect(

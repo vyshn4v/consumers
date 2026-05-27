@@ -1,6 +1,6 @@
 const amqp = require("amqplib");
-const scanner = require("./scanner");
-const db = require("./db.setup");
+const scanner = require("../tools/scanner");
+const db = require("../db/db.setup");
 
 const MAX_RETRIES = 3;
 

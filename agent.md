@@ -18,3 +18,4 @@ This document outlines the scope, rules, and best practices for AI agents operat
 2. **Avoid Hallucination**: If you do not know the answer or are unsure, do not change anything. Never guess.
 3. **Communication First**: Adopt a "communication first" (request for change) approach. Seek alignment before making modifications.
 4. **Protect Critical Files**: Avoid accessing or manipulating critical file structures meant to be kept strictly in the repo. If something is missing, request it rather than assuming or generating it.
+5. **Maintain Context Documents**: Whenever significant code or structural changes are made, ensure that all context files (like `README.md`, `ARCHITECTURE.md`, and `CHANGELOG.md`) are updated to reflect the new state of the project.

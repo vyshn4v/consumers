@@ -3,9 +3,9 @@ const {
   buildNmapArgs,
   executeCommand,
   parseNmapXml,
-} = require("./nmap-service");
-const { generateSummary } = require("./ai-service");
-const { generateLocalSummary } = require("./graph-service");
+} = require("../services/nmap-service");
+const { generateSummary } = require("../services/ai-service");
+const { generateLocalSummary } = require("../services/graph-service");
 
 /**
  * MAIN API

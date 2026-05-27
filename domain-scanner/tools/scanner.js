@@ -1,6 +1,6 @@
 const dns = require("dns").promises;
-const { isValidDomain, fetchSSLCertificate } = require("./ssl-service");
-const { generateSummary } = require("./ai-service");
+const { isValidDomain, fetchSSLCertificate } = require("../services/ssl-service");
+const { generateSummary } = require("../services/ai-service");
 
 /**
  * MAIN API
