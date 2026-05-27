@@ -1,7 +1,9 @@
 const amqp = require("amqplib");
-const scanner = require("./tools");
-// const Scan = require("./db.setup");
+const scanner = require("./scanner");
 const db = require("./db.setup");
+
+const MAX_RETRIES = 3;
+
 async function consumeMessages() {
   try {
     const connection = await amqp.connect(
@@ -10,7 +12,7 @@ async function consumeMessages() {
 
     const channel = await connection.createChannel();
 
-    const queue = "scan_queue";
+    const queue = "domain_scan_queue";
 
     await channel.assertQueue(queue, {
       durable: true,
@@ -18,7 +20,7 @@ async function consumeMessages() {
 
     channel.prefetch(1);
 
-    console.log("Waiting for messages...");
+    console.log("Waiting for domain scan messages...");
 
     channel.consume(queue, async (msg) => {
       if (!msg) return;
@@ -26,6 +28,11 @@ async function consumeMessages() {
       const data = JSON.parse(msg.content.toString());
       const scanId = data?.data?.scanId || data?.scanId || data?.data?.scan_id || data?.scan_id;
       console.log("Received:", data);
+
+      let attempt = 0;
+      let success = false;
+      let response = null;
+
       try {
         await db.query(
           `
@@ -36,9 +43,29 @@ async function consumeMessages() {
   `,
           [scanId, "running"],
         );
-        // Run your process here
-        const response = await scanner(data);
-        if (response.success) {
+
+        while (attempt < MAX_RETRIES && !success) {
+          attempt++;
+          console.log(`Scanning attempt ${attempt} for scan_id: ${scanId}`);
+          try {
+            response = await scanner(data);
+            if (response.success) {
+              success = true;
+            } else {
+              console.error(`Attempt ${attempt} failed:`, response.error);
+              if (attempt < MAX_RETRIES) {
+                await new Promise((res) => setTimeout(res, 2000 * attempt)); // exponential backoff
+              }
+            }
+          } catch (err) {
+            console.error(`Attempt ${attempt} threw an error:`, err);
+            if (attempt < MAX_RETRIES) {
+              await new Promise((res) => setTimeout(res, 2000 * attempt)); // exponential backoff
+            }
+          }
+        }
+
+        if (success && response) {
           await db.query("BEGIN");
           await db.query(
             `
@@ -79,17 +106,21 @@ async function consumeMessages() {
           channel.nack(msg, false, false);
         }
       } catch (err) {
-        console.error(err);
-        await db.query("ROLLBACK");
-        await db.query(
-          `
-    UPDATE scans
-    SET status = $2,
-        updated_at = NOW()
-    WHERE id = $1
-  `,
-          [scanId, "failed"],
-        );
+        console.error("Critical error processing message:", err);
+        try {
+            await db.query("ROLLBACK");
+            await db.query(
+            `
+        UPDATE scans
+        SET status = $2,
+            updated_at = NOW()
+        WHERE id = $1
+    `,
+            [scanId, "failed"],
+            );
+        } catch(dbErr) {
+            console.error("DB rollback failed:", dbErr);
+        }
         channel.nack(msg, false, false);
       }
     });

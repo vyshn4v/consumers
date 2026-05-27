@@ -1,0 +1,14 @@
+{
+  "name": "domain-scanner",
+  "version": "1.0.0",
+  "main": "amqp-setup.js",
+  "scripts": {
+    "start": "node amqp-setup.js"
+  },
+  "dependencies": {
+    "@google/genai": "^2.0.0",
+    "amqplib": "^0.10.3",
+    "pg": "^8.20.0",
+    "zod": "^3.22.4"
+  }
+}
