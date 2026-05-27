@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "messaging/amqp-setup.js",
   "scripts": {
-    "start": "node messaging/amqp-setup.js",
-    "dev": "node --watch messaging/amqp-setup.js"
+    "start": "node --env-file=.env messaging/amqp-setup.js",
+    "dev": "node --watch --env-file=.env messaging/amqp-setup.js"
   },
   "dependencies": {
     "@google/genai": "^2.0.0",
