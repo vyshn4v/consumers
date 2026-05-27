@@ -9,38 +9,13 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-/**
- * AI RESPONSE SCHEMA
- */
-const AiSummarySchema = z.object({
-  executive_summary: z.string(),
-  risk_assessment: z.string(),
-  domain_insights: z.array(z.string()),
-  recommendations: z.array(z.string()),
-  risk_score: z.number(),
-});
+const { AiSummarySchema, responseSchema } = require("./ai-schema");
 
 /**
  * GEMINI AI SUMMARY
  */
 async function generateSummary(scanData) {
-  const responseSchema = {
-    type: "object",
-    properties: {
-      executive_summary: { type: "string" },
-      risk_assessment: { type: "string" },
-      domain_insights: { type: "array", items: { type: "string" } },
-      recommendations: { type: "array", items: { type: "string" } },
-      risk_score: { type: "number" },
-    },
-    required: [
-      "executive_summary",
-      "risk_assessment",
-      "domain_insights",
-      "recommendations",
-      "risk_score",
-    ],
-  };
+
 
   const prompt = `
 You are a senior cybersecurity analyst focusing on DNS and SSL/TLS posture.
