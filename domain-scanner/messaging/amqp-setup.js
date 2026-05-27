@@ -34,15 +34,7 @@ async function consumeMessages() {
       let response = null;
 
       try {
-        await db.query(
-          `
-    UPDATE scans
-    SET status = $2,
-        updated_at = NOW()
-    WHERE id = $1
-  `,
-          [scanId, "running"],
-        );
+        await db.updateScanStatus(scanId, "running");
 
         while (attempt < MAX_RETRIES && !success) {
           attempt++;
@@ -67,57 +59,19 @@ async function consumeMessages() {
 
         if (success && response) {
           await db.query("BEGIN");
-          await db.query(
-            `
-            INSERT INTO scan_results (
-              scan_id,
-              "resultData",
-              "updated_at"
-              )
-              VALUES ($1, $2, NOW())
-              ON CONFLICT (scan_id)
-              DO UPDATE SET
-              "resultData" = EXCLUDED."resultData",
-    "updated_at" = NOW()
-    `,
-            [scanId, response],
-          );
-          await db.query(
-            `
-          UPDATE scans
-          SET status = $2,
-          updated_at = NOW()
-          WHERE id = $1
-          `,
-            [scanId, "completed"],
-          );
+          await db.saveScanResult(scanId, response);
+          await db.updateScanStatus(scanId, "completed");
           await db.query("COMMIT");
           channel.ack(msg);
         } else {
-          await db.query(
-            `
-    UPDATE scans
-    SET status = $2,
-        updated_at = NOW()
-    WHERE id = $1
-  `,
-            [scanId, "failed"],
-          );
+          await db.updateScanStatus(scanId, "failed");
           channel.nack(msg, false, false);
         }
       } catch (err) {
         console.error("Critical error processing message:", err);
         try {
             await db.query("ROLLBACK");
-            await db.query(
-            `
-        UPDATE scans
-        SET status = $2,
-            updated_at = NOW()
-        WHERE id = $1
-    `,
-            [scanId, "failed"],
-            );
+            await db.updateScanStatus(scanId, "failed");
         } catch(dbErr) {
             console.error("DB rollback failed:", dbErr);
         }

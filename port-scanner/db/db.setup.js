@@ -1,22 +1,3 @@
-// const mongoose = require("mongoose");
-
-// mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/csekapp", {
-//   dbName: "csekapp_db",
-// });
-
-// const ScanSchema = new mongoose.Schema(
-//   {},
-//   {
-//     strict: false,
-//   },
-// );
-
-// const Scan = mongoose.model("Scan", ScanSchema);
-
-// module.exports = Scan;
-
-// postgress db connection setup
-
 const { Pool } = require("pg");
 
 const pool = new Pool({
@@ -28,4 +9,28 @@ const pool = new Pool({
 });
 module.exports = {
   query: (text, params) => pool.query(text, params),
+  updateScanStatus: async (scanId, status) => {
+    return pool.query(
+      `
+      UPDATE scans
+      SET status = $2,
+          updated_at = NOW()
+      WHERE id = $1
+      `,
+      [scanId, status]
+    );
+  },
+  saveScanResult: async (scanId, resultData) => {
+    return pool.query(
+      `
+      INSERT INTO scan_results (scan_id, "resultData", "updated_at")
+      VALUES ($1, $2, NOW())
+      ON CONFLICT (scan_id)
+      DO UPDATE SET
+      "resultData" = EXCLUDED."resultData",
+      "updated_at" = NOW()
+      `,
+      [scanId, resultData]
+    );
+  },
 };
