@@ -1,9 +1,10 @@
 {
   "name": "domain-scanner",
   "version": "1.0.0",
-  "main": "amqp-setup.js",
+  "main": "messaging/amqp-setup.js",
   "scripts": {
-    "start": "node amqp-setup.js"
+    "start": "node messaging/amqp-setup.js",
+    "dev": "node --watch messaging/amqp-setup.js"
   },
   "dependencies": {
     "@google/genai": "^2.0.0",
