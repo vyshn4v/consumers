@@ -12,8 +12,18 @@ function isValidDomain(domain) {
 /**
  * BUILD NMAP ARGS
  */
-function buildNmapArgs(domain) {
-  return ["-sV", "-Pn", "-T4", "-oX", "-", domain];
+function buildNmapArgs(domain, options) {
+  let customArgs = [];
+  if (options) {
+    if (Array.isArray(options)) {
+      customArgs = options;
+    } else if (typeof options === "string") {
+      customArgs = options.split(/\s+/).filter(Boolean);
+    }
+  }
+
+  const baseArgs = ["-sV", "-Pn", "-T4"];
+  return [...baseArgs, ...customArgs, "-oX", "-", domain];
 }
 
 /**
