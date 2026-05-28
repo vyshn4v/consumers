@@ -1,6 +1,6 @@
 const amqp = require("amqplib");
 const { connectDb, updateContactStatus } = require("../db/db-setup");
-const { sendContactEmail } = require("../services/mail-service");
+const { sendContactEmail, sendAcknowledgementEmail } = require("../services/mail-service");
 
 async function startConsumer() {
   // ── 1. Connect to MongoDB ─────────────────────────────────────────────────
@@ -38,13 +38,23 @@ async function startConsumer() {
     console.log(`[email-consumer] Processing contact ${contact.contactId}`);
 
     try {
-      // ── 4. Send the email ───────────────────────────────────────────────
+      // ── 4. Send the notification email to the site owner ────────────────
       await sendContactEmail(contact);
 
-      // ── 5. Mark as sent in MongoDB ──────────────────────────────────────
+      // ── 5. Send acknowledgement email back to the visitor ────────────────
+      // We treat this as best-effort: if it fails we log it but still
+      // ack the message since the owner notification already succeeded.
+      try {
+        await sendAcknowledgementEmail(contact);
+        console.log(`[email-consumer] ✅ Acknowledgement sent to ${contact.email}`);
+      } catch (ackErr) {
+        console.warn(`[email-consumer] ⚠ Acknowledgement failed for ${contact.email}:`, ackErr.message);
+      }
+
+      // ── 6. Mark as sent in MongoDB ───────────────────────────────────────
       await updateContactStatus(contact.contactId, "sent");
 
-      console.log(`[email-consumer] ✅ Sent email for contact ${contact.contactId}`);
+      console.log(`[email-consumer] ✅ Completed contact ${contact.contactId}`);
       channel.ack(msg);
 
     } catch (err) {

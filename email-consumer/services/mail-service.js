@@ -80,4 +80,86 @@ async function sendContactEmail(contact) {
   });
 }
 
-module.exports = { sendContactEmail };
+/**
+ * Send an acknowledgement email back to the person who submitted the form.
+ * Called after sendContactEmail() succeeds.
+ *
+ * @param {object} contact - Same payload from the queue
+ */
+async function sendAcknowledgementEmail(contact) {
+  const {
+    firstName,
+    lastName = "",
+    email,
+    subject  = "(no subject)",
+    message,
+  } = contact;
+
+  const fullName = [firstName, lastName].filter(Boolean).join(" ");
+  const ownerName = process.env.OWNER_NAME || "Vyshnav P C";
+  const ownerEmail = process.env.MAIL_TO   || process.env.MAIL_USER;
+
+  await getTransporter().sendMail({
+    from:    process.env.MAIL_FROM || process.env.MAIL_USER,
+    to:      email,
+    replyTo: ownerEmail,
+    subject: `Got your message! I'll be in touch soon — ${ownerName}`,
+    text: [
+      `Hi ${firstName},`,
+      ``,
+      `Thanks for reaching out! I've received your message and will get back to you within 24 hours.`,
+      ``,
+      `Here's a copy of what you sent:`,
+      `Subject : ${subject}`,
+      `Message : ${message}`,
+      ``,
+      `Talk soon,`,
+      `${ownerName}`,
+    ].join("\n"),
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:auto;color:#1a1a2e">
+
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);padding:36px 32px;border-radius:12px 12px 0 0;text-align:center">
+          <h1 style="margin:0;font-size:24px;color:#fff;letter-spacing:-0.5px">
+            Message received! 🚀
+          </h1>
+          <p style="margin:8px 0 0;color:#a0a0c0;font-size:14px">
+            I'll get back to you within 24 hours.
+          </p>
+        </div>
+
+        <!-- Body -->
+        <div style="background:#ffffff;padding:32px;border:1px solid #e8e8f0;border-top:none">
+          <p style="margin:0 0 16px">Hi <strong>${fullName}</strong>,</p>
+          <p style="margin:0 0 24px;line-height:1.6;color:#444">
+            Thanks for reaching out! I've received your message and will reply
+            as soon as possible — usually within 24 hours.
+          </p>
+
+          <!-- Copy of their message -->
+          <div style="background:#f7f7fb;border-left:4px solid #6c63ff;border-radius:4px;padding:16px 20px;margin-bottom:24px">
+            <p style="margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#888">Your message</p>
+            <p style="margin:0 0 8px"><strong>Subject:</strong> ${subject}</p>
+            <p style="margin:0;white-space:pre-wrap;line-height:1.6;color:#333">${message}</p>
+          </div>
+
+          <p style="margin:0;line-height:1.6;color:#444">
+            Talk soon,<br/>
+            <strong>${ownerName}</strong>
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background:#f0f0f8;padding:16px 32px;border-radius:0 0 12px 12px;text-align:center">
+          <p style="margin:0;font-size:12px;color:#999">
+            This is an automated acknowledgement — please reply to this email if you need to follow up.
+          </p>
+        </div>
+
+      </div>
+    `,
+  });
+}
+
+module.exports = { sendContactEmail, sendAcknowledgementEmail };
