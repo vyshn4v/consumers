@@ -7,8 +7,8 @@ function getTransporter() {
   if (transporter) return transporter;
 
   transporter = nodemailer.createTransport({
-    host:   process.env.MAIL_HOST,
-    port:   Number(process.env.MAIL_PORT) || 587,
+    host: process.env.MAIL_HOST,
+    port: Number(process.env.MAIL_PORT) || 587,
     secure: Number(process.env.MAIL_PORT) === 465, // true only for port 465
     auth: {
       user: process.env.MAIL_USER,
@@ -37,7 +37,7 @@ async function sendContactEmail(contact) {
     firstName,
     lastName = "",
     email,
-    subject  = "(no subject)",
+    subject = "(no subject)",
     message,
     submittedAt,
   } = contact;
@@ -45,8 +45,8 @@ async function sendContactEmail(contact) {
   const fullName = [firstName, lastName].filter(Boolean).join(" ");
 
   await getTransporter().sendMail({
-    from:    process.env.MAIL_FROM || process.env.MAIL_USER,
-    to:      process.env.MAIL_TO,
+    from: process.env.MAIL_FROM || process.env.MAIL_USER,
+    to: process.env.MAIL_TO,
     replyTo: email,
     subject: `[Contact] ${subject} — from ${fullName}`,
     text: [
@@ -91,17 +91,17 @@ async function sendAcknowledgementEmail(contact) {
     firstName,
     lastName = "",
     email,
-    subject  = "(no subject)",
+    subject = "(no subject)",
     message,
   } = contact;
 
   const fullName = [firstName, lastName].filter(Boolean).join(" ");
   const ownerName = process.env.OWNER_NAME || "Vyshnav P C";
-  const ownerEmail = process.env.MAIL_TO   || process.env.MAIL_USER;
+  const ownerEmail = process.env.MAIL_TO || process.env.MAIL_USER;
 
   await getTransporter().sendMail({
-    from:    process.env.MAIL_FROM || process.env.MAIL_USER,
-    to:      email,
+    from: process.env.MAIL_FROM || process.env.MAIL_USER,
+    to: email,
     replyTo: ownerEmail,
     subject: `Got your message! I'll be in touch soon — ${ownerName}`,
     text: [
@@ -162,4 +162,36 @@ async function sendAcknowledgementEmail(contact) {
   });
 }
 
-module.exports = { sendContactEmail, sendAcknowledgementEmail };
+/**
+ * Send the admin password email generated on startup.
+ */
+async function sendAdminCredentialsEmail(contact) {
+  const { password } = contact;
+  const mailTo = process.env.MAIL_TO;
+  const mailUser = process.env.MAIL_USER;
+
+  await getTransporter().sendMail({
+    from: `"Vyshnav PC Portfolio" <${mailUser}>`,
+    to: mailTo,
+    subject: "🚨 Portfolio Admin Access - New Startup Password",
+    text: `Your portfolio server just started.\n\nHere is your new temporary admin password: ${password}\n\nLogin at: http://localhost:3000/admin/login\n\nThis password changes every time the server restarts.`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <h2 style="color: #1a1a2e;">Portfolio Admin Access 🔐</h2>
+        <p>Your portfolio server has just restarted.</p>
+        <p>A new, single-use administrative password has been generated for this session:</p>
+        <div style="background: #f4f4f8; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 18px; font-weight: bold; text-align: center; letter-spacing: 2px;">
+          ${password}
+        </div>
+        <p style="margin-top: 20px;">
+          <a href="http://localhost:3000/admin/login" style="background: #7c6ef7; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 4px; display: inline-block;">Go to Login</a>
+        </p>
+        <p style="color: #777; font-size: 12px; margin-top: 30px;">
+          * This password changes every time your server restarts. Keep it secure.
+        </p>
+      </div>
+    `
+  });
+}
+
+module.exports = { sendContactEmail, sendAcknowledgementEmail, sendAdminCredentialsEmail };

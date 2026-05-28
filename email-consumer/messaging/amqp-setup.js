@@ -1,17 +1,21 @@
 const amqp = require("amqplib");
 const { connectDb, updateContactStatus } = require("../db/db-setup");
-const { sendContactEmail, sendAcknowledgementEmail } = require("../services/mail-service");
+const {
+  sendContactEmail,
+  sendAcknowledgementEmail,
+  sendAdminCredentialsEmail,
+} = require("../services/mail-service");
 
 async function startConsumer() {
   // ── 1. Connect to MongoDB ─────────────────────────────────────────────────
   await connectDb();
 
   // ── 2. Connect to RabbitMQ ────────────────────────────────────────────────
-  const url   = process.env.AMQP_URL   || "amqp://localhost:5672";
+  const url = process.env.AMQP_URL || "amqp://localhost:5672";
   const queue = process.env.QUEUE_NAME || "contact_email_queue";
 
   const connection = await amqp.connect(url);
-  const channel    = await connection.createChannel();
+  const channel = await connection.createChannel();
 
   // durable: true — survives broker restarts (must match the publisher setting)
   await channel.assertQueue(queue, { durable: true });
@@ -35,7 +39,19 @@ async function startConsumer() {
       return;
     }
 
-    console.log(`[email-consumer] Processing contact ${contact.contactId}`);
+    console.log(`[email-consumer] Processing message... (type: ${contact.type || "contact"})`);
+
+    if (contact.type === "admin_credentials") {
+      try {
+        await sendAdminCredentialsEmail(contact);
+        console.log("[email-consumer] ✅ Successfully sent admin credentials");
+        channel.ack(msg);
+      } catch (err) {
+        console.error("[email-consumer] ❌ Failed to send admin credentials:", err.message);
+        channel.nack(msg, false, false);
+      }
+      return; // Stop processing further for this message type
+    }
 
     try {
       // ── 4. Send the notification email to the site owner ────────────────
@@ -46,9 +62,14 @@ async function startConsumer() {
       // ack the message since the owner notification already succeeded.
       try {
         await sendAcknowledgementEmail(contact);
-        console.log(`[email-consumer] ✅ Acknowledgement sent to ${contact.email}`);
+        console.log(
+          `[email-consumer] ✅ Acknowledgement sent to ${contact.email}`,
+        );
       } catch (ackErr) {
-        console.warn(`[email-consumer] ⚠ Acknowledgement failed for ${contact.email}:`, ackErr.message);
+        console.warn(
+          `[email-consumer] ⚠ Acknowledgement failed for ${contact.email}:`,
+          ackErr.message,
+        );
       }
 
       // ── 6. Mark as sent in MongoDB ───────────────────────────────────────
@@ -56,9 +77,11 @@ async function startConsumer() {
 
       console.log(`[email-consumer] ✅ Completed contact ${contact.contactId}`);
       channel.ack(msg);
-
     } catch (err) {
-      console.error(`[email-consumer] ❌ Failed for contact ${contact.contactId}:`, err.message);
+      console.error(
+        `[email-consumer] ❌ Failed for contact ${contact.contactId}:`,
+        err.message,
+      );
 
       // Mark as failed in MongoDB, then discard (no infinite retry loop)
       await updateContactStatus(contact.contactId, "failed").catch(() => {});

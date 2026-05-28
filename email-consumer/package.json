@@ -5,14 +5,14 @@
   "main": "messaging/amqp-setup.js",
   "scripts": {
     "start": "node --env-file=.env messaging/amqp-setup.js",
-    "dev":   "node --watch --env-file=.env messaging/amqp-setup.js"
+    "dev": "node --watch --env-file=.env messaging/amqp-setup.js"
   },
   "keywords": [],
   "author": "vyshnav p c",
   "license": "ISC",
   "dependencies": {
-    "amqplib":    "^0.10.4",
-    "mongoose":   "^9.6.1",
+    "amqplib": "^0.10.4",
+    "mongoose": "^9.6.1",
     "nodemailer": "^6.9.14"
   }
 }
