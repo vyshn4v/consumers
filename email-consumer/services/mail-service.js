@@ -194,4 +194,21 @@ async function sendAdminCredentialsEmail(contact) {
   });
 }
 
-module.exports = { sendContactEmail, sendAcknowledgementEmail, sendAdminCredentialsEmail };
+/**
+ * Send OTP or Password Reset email (from SSO)
+ *
+ * @param {object} data
+ * @param {string} data.toUser
+ * @param {string} data.Otp
+ */
+async function sendOtpEmail(data) {
+  const { toUser, Otp } = data;
+  await getTransporter().sendMail({
+    from: process.env.MAIL_FROM || process.env.MAIL_USER,
+    to: toUser,
+    subject: "Security Notification (OTP / Reset Link)",
+    text: Otp,
+  });
+}
+
+module.exports = { sendContactEmail, sendAcknowledgementEmail, sendAdminCredentialsEmail, sendOtpEmail };

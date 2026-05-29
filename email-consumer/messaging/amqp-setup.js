@@ -4,6 +4,7 @@ const {
   sendContactEmail,
   sendAcknowledgementEmail,
   sendAdminCredentialsEmail,
+  sendOtpEmail,
 } = require("../services/mail-service");
 
 async function startConsumer() {
@@ -19,11 +20,14 @@ async function startConsumer() {
 
   // durable: true — survives broker restarts (must match the publisher setting)
   await channel.assertQueue(queue, { durable: true });
+  
+  const otpQueue = process.env.OTP_QUEUE_NAME || "otp_queue";
+  await channel.assertQueue(otpQueue, { durable: true });
 
   // Process one message at a time so a slow SMTP call doesn't pile up
   channel.prefetch(1);
 
-  console.log(`[email-consumer] Waiting for messages on "${queue}"...`);
+  console.log(`[email-consumer] Waiting for messages on "${queue}" and "${otpQueue}"...`);
 
   // ── 3. Consume messages ───────────────────────────────────────────────────
   channel.consume(queue, async (msg) => {
@@ -85,6 +89,32 @@ async function startConsumer() {
 
       // Mark as failed in MongoDB, then discard (no infinite retry loop)
       await updateContactStatus(contact.contactId, "failed").catch(() => {});
+      channel.nack(msg, false, false);
+    }
+  });
+
+  // Consume SSO OTP/Reset queue
+  channel.consume(otpQueue, async (msg) => {
+    if (!msg) return;
+
+    let data;
+    try {
+      data = JSON.parse(msg.content.toString());
+    } catch {
+      console.error(`[email-consumer] Could not parse message from ${otpQueue}`);
+      channel.nack(msg, false, false);
+      return;
+    }
+
+    console.log(`[email-consumer] Sending SSO OTP/Reset email to: ${data.toUser}`);
+    try {
+      await sendOtpEmail(data);
+      console.log(`[email-consumer] ✅ Successfully sent SSO email`);
+      channel.ack(msg);
+    } catch (err) {
+      console.error(`[email-consumer] ❌ Failed to send SSO email:`, err.message);
+      // Wait a bit before nacking so it doesn't spin loop aggressively? 
+      // Actually standard nack will re-queue if we pass true to the 3rd param, but we'll discard for now if email failed to avoid infinite loop
       channel.nack(msg, false, false);
     }
   });
