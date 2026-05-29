@@ -13,24 +13,25 @@ async function startConsumer() {
 
   // ── 2. Connect to RabbitMQ ────────────────────────────────────────────────
   const url = process.env.AMQP_URL || "amqp://localhost:5672";
-  const queue = process.env.QUEUE_NAME || "contact_email_queue";
+  const contactQueue = process.env.QUEUE_NAME || "contact_email_queue";
+  const otpQueue = process.env.OTP_QUEUE_NAME || "otp_queue";
 
   const connection = await amqp.connect(url);
   const channel = await connection.createChannel();
 
   // durable: true — survives broker restarts (must match the publisher setting)
-  await channel.assertQueue(queue, { durable: true });
-  
-  const otpQueue = process.env.OTP_QUEUE_NAME || "otp_queue";
+  await channel.assertQueue(contactQueue, { durable: true });
   await channel.assertQueue(otpQueue, { durable: true });
 
   // Process one message at a time so a slow SMTP call doesn't pile up
   channel.prefetch(1);
 
-  console.log(`[email-consumer] Waiting for messages on "${queue}" and "${otpQueue}"...`);
+  console.log(
+    `[email-consumer] Waiting for messages on "${contactQueue}" and "${otpQueue}"...`,
+  );
 
   // ── 3. Consume messages ───────────────────────────────────────────────────
-  channel.consume(queue, async (msg) => {
+  channel.consume(contactQueue, async (msg) => {
     if (!msg) return;
 
     let contact;
@@ -43,7 +44,9 @@ async function startConsumer() {
       return;
     }
 
-    console.log(`[email-consumer] Processing message... (type: ${contact.type || "contact"})`);
+    console.log(
+      `[email-consumer] Processing message... (type: ${contact.type || "contact"})`,
+    );
 
     if (contact.type === "admin_credentials") {
       try {
@@ -51,7 +54,10 @@ async function startConsumer() {
         console.log("[email-consumer] ✅ Successfully sent admin credentials");
         channel.ack(msg);
       } catch (err) {
-        console.error("[email-consumer] ❌ Failed to send admin credentials:", err.message);
+        console.error(
+          "[email-consumer] ❌ Failed to send admin credentials:",
+          err.message,
+        );
         channel.nack(msg, false, false);
       }
       return; // Stop processing further for this message type
@@ -101,19 +107,26 @@ async function startConsumer() {
     try {
       data = JSON.parse(msg.content.toString());
     } catch {
-      console.error(`[email-consumer] Could not parse message from ${otpQueue}`);
+      console.error(
+        `[email-consumer] Could not parse message from ${otpQueue}`,
+      );
       channel.nack(msg, false, false);
       return;
     }
 
-    console.log(`[email-consumer] Sending SSO OTP/Reset email to: ${data.toUser}`);
+    console.log(
+      `[email-consumer] Sending SSO OTP/Reset email to: ${data.toUser}`,
+    );
     try {
       await sendOtpEmail(data);
       console.log(`[email-consumer] ✅ Successfully sent SSO email`);
       channel.ack(msg);
     } catch (err) {
-      console.error(`[email-consumer] ❌ Failed to send SSO email:`, err.message);
-      // Wait a bit before nacking so it doesn't spin loop aggressively? 
+      console.error(
+        `[email-consumer] ❌ Failed to send SSO email:`,
+        err.message,
+      );
+      // Wait a bit before nacking so it doesn't spin loop aggressively?
       // Actually standard nack will re-queue if we pass true to the 3rd param, but we'll discard for now if email failed to avoid infinite loop
       channel.nack(msg, false, false);
     }
