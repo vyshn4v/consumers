@@ -194,20 +194,82 @@ async function sendAdminCredentialsEmail(contact) {
   });
 }
 
-/**
- * Send OTP or Password Reset email (from SSO)
- *
- * @param {object} data
- * @param {string} data.toUser
- * @param {string} data.Otp
- */
 async function sendOtpEmail(data) {
-  const { toUser, Otp } = data;
+  const { toUser, Otp, type, resetLink } = data;
+  
+  let subject = "Security Notification";
+  let html = "";
+  
+  if (type === "reset_link") {
+    subject = "Reset Your Password 🔐";
+    html = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 30px; background-color: #f9f9fc; border-radius: 12px; border: 1px solid #e8e8f0;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="background: #7c6ef7; width: 60px; height: 60px; border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(124, 110, 247, 0.3);">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <h1 style="color: #1a1a2e; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">Password Reset Request</h1>
+        </div>
+        
+        <div style="background: white; padding: 30px; border-radius: 8px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+          <p style="margin: 0 0 15px; color: #444; font-size: 16px; line-height: 1.6;">Hello,</p>
+          <p style="margin: 0 0 25px; color: #444; font-size: 16px; line-height: 1.6;">We received a request to reset the password for your account. Click the button below to choose a new password.</p>
+          
+          <div style="text-align: center; margin-bottom: 25px;">
+            <a href="${resetLink}" style="background: #7c6ef7; color: #fff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; display: inline-block; font-size: 15px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(124, 110, 247, 0.25);">Reset Password</a>
+          </div>
+          
+          <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.6;">If you didn't request a password reset, you can safely ignore this email. This link is only valid for 15 minutes.</p>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; color: #999; font-size: 12px;">
+          <p style="margin: 0;">Secure SSO Authentication Service</p>
+          <p style="margin: 5px 0 0;">This is an automated message, please do not reply.</p>
+        </div>
+      </div>
+    `;
+  } else {
+    // Default to OTP view
+    subject = "Your Verification Code 🛡️";
+    html = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 30px; background-color: #f9f9fc; border-radius: 12px; border: 1px solid #e8e8f0;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="background: #1d9e75; width: 60px; height: 60px; border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(29, 158, 117, 0.3);">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          </div>
+          <h1 style="color: #1a1a2e; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">Verification Code</h1>
+        </div>
+        
+        <div style="background: white; padding: 30px; border-radius: 8px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.02); text-align: center;">
+          <p style="margin: 0 0 15px; color: #444; font-size: 16px; line-height: 1.6;">Hello,</p>
+          <p style="margin: 0 0 25px; color: #444; font-size: 16px; line-height: 1.6;">Here is your secure verification code. Please enter it to continue.</p>
+          
+          <div style="background: #f4f4f8; padding: 20px; border-radius: 8px; font-family: monospace; font-size: 32px; font-weight: bold; color: #1a1a2e; letter-spacing: 6px; margin-bottom: 25px; border: 1px dashed #d0d0d8;">
+            ${Otp}
+          </div>
+          
+          <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.6;">This code is valid for a limited time. Do not share this code with anyone.</p>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; color: #999; font-size: 12px;">
+          <p style="margin: 0;">Secure SSO Authentication Service</p>
+          <p style="margin: 5px 0 0;">This is an automated message, please do not reply.</p>
+        </div>
+      </div>
+    `;
+  }
+
   await getTransporter().sendMail({
     from: process.env.MAIL_FROM || process.env.MAIL_USER,
     to: toUser,
-    subject: "Security Notification (OTP / Reset Link)",
+    subject,
     text: Otp,
+    html,
   });
 }
 
