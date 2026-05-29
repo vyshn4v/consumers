@@ -207,8 +207,9 @@ async function sendOtpEmail(data) {
         <div style="text-align: center; margin-bottom: 30px;">
           <div style="background: #7c6ef7; width: 60px; height: 60px; border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(124, 110, 247, 0.3);">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              <path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"></path>
+              <path d="m21 2-9.6 9.6"></path>
+              <circle cx="7.5" cy="15.5" r="5.5"></circle>
             </svg>
           </div>
           <h1 style="color: #1a1a2e; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">Password Reset Request</h1>
@@ -239,7 +240,9 @@ async function sendOtpEmail(data) {
         <div style="text-align: center; margin-bottom: 30px;">
           <div style="background: #1d9e75; width: 60px; height: 60px; border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(29, 158, 117, 0.3);">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"></path>
+              <path d="m21 2-9.6 9.6"></path>
+              <circle cx="7.5" cy="15.5" r="5.5"></circle>
             </svg>
           </div>
           <h1 style="color: #1a1a2e; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">Verification Code</h1>
