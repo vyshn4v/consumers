@@ -1,23 +1,18 @@
 {
-  "name": "amqp-client",
+  "name": "email-consumer",
   "version": "1.0.0",
+  "description": "AMQP consumer — reads contact_email_queue and sends email notifications via Nodemailer",
   "main": "messaging/amqp-setup.js",
   "scripts": {
     "start": "node --env-file=.env messaging/amqp-setup.js",
     "dev": "node --watch --env-file=.env messaging/amqp-setup.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "vyshnav p c",
   "license": "ISC",
-  "description": "",
   "dependencies": {
-    "@google/genai": "^2.0.0",
-    "amqplib": "^2.0.1",
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
+    "amqplib": "^0.10.4",
     "mongoose": "^9.6.1",
-    "pg": "^8.20.0",
-    "xml2js": "^0.6.2",
-    "zod": "^4.4.3"
+    "nodemailer": "^6.9.14"
   }
 }
