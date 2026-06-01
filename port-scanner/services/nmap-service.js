@@ -10,27 +10,43 @@ function isValidDomain(domain) {
 }
 
 /**
- * BUILD NMAP ARGS
+ * SCAN MODE PRESETS
+ * Maps a friendly preset name to the actual nmap arguments.
+ * The consumer is the only layer that knows about nmap flags.
  */
-function buildNmapArgs(domain, options) {
-  let customArgs = [];
-  if (options) {
-    if (Array.isArray(options)) {
-      customArgs = options;
-    } else if (typeof options === "string") {
-      customArgs = options.split(/\s+/).filter(Boolean);
-    }
+const SCAN_PRESETS = {
+  quick:         ["--top-ports", "100"],
+  standard:      ["--top-ports", "1000"],         // default
+  full:          ["-p-"],                          // all 65535 ports
+  aggressive:    ["-A", "-p-"],                    // OS detection + scripts + version + traceroute
+  vulnerability: ["--script", "vuln", "-p-"],      // NSE vulnerability scripts on all ports
+};
+
+/**
+ * BUILD NMAP ARGS
+ * Resolves a scanMode preset name into the final nmap argument array.
+ * Falls back to 'standard' if the mode is unknown.
+ */
+function buildNmapArgs(domain, scanMode) {
+  const preset = SCAN_PRESETS[scanMode] || SCAN_PRESETS.standard;
+
+  if (!SCAN_PRESETS[scanMode]) {
+    console.warn(`[nmap-service] Unknown scanMode '${scanMode}', falling back to 'standard'.`);
   }
 
   const baseArgs = ["-sV", "-Pn", "-T4"];
+
+  // Merge base args with preset, avoiding duplicate flags
   const combinedArgs = [];
   for (const arg of baseArgs) {
-    if (!customArgs.includes(arg)) {
+    if (!preset.includes(arg)) {
       combinedArgs.push(arg);
     }
   }
-  combinedArgs.push(...customArgs);
-  
+  combinedArgs.push(...preset);
+
+  console.log(`[nmap-service] scanMode='${scanMode || "standard"}' → nmap`, [...combinedArgs, "-oX", "-", domain].join(" "));
+
   return [...combinedArgs, "-oX", "-", domain];
 }
 

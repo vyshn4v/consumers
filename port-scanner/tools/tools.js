@@ -36,8 +36,8 @@ module.exports = async function scanner({ data }) {
     /**
      * RUN NMAP
      */
-    const scanOptions = data.scanOptions || data.options || data.scan_options || [];
-    const nmapArgs = buildNmapArgs(domain, scanOptions);
+    const scanMode = data.data?.scanMode || data.scanMode || "standard";
+    const nmapArgs = buildNmapArgs(domain, scanMode);
     const xmlResult = await executeCommand("nmap", nmapArgs);
 
     /**
