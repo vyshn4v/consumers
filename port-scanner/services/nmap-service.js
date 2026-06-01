@@ -23,7 +23,13 @@ function buildNmapArgs(domain, options) {
   }
 
   const baseArgs = ["-sV", "-Pn", "-T4"];
-  const combinedArgs = Array.from(new Set([...baseArgs, ...customArgs]));
+  const combinedArgs = [];
+  for (const arg of baseArgs) {
+    if (!customArgs.includes(arg)) {
+      combinedArgs.push(arg);
+    }
+  }
+  combinedArgs.push(...customArgs);
   
   return [...combinedArgs, "-oX", "-", domain];
 }
