@@ -5,7 +5,7 @@ const {
   parseNmapXml,
 } = require("../services/nmap-service");
 const { generateSummary } = require("../services/ai-service");
-const { generateLocalSummary } = require("../services/graph-service");
+const { generateLocalSummary, generateGraphData } = require("../services/graph-service");
 
 /**
  * MAIN API
@@ -61,6 +61,11 @@ module.exports = async function scanner({ data }) {
     });
 
     /**
+     * GRAPH DATA GENERATION
+     */
+    const graphData = generateGraphData(parsedScan);
+
+    /**
      * FINAL RESPONSE
      */
     return {
@@ -78,7 +83,7 @@ module.exports = async function scanner({ data }) {
         recommendations: aiSummary.recommendations,
         risk_score: aiSummary.risk_score,
       },
-      graph_data: aiSummary.graph_data,
+      graph_data: graphData,
     };
   } catch (err) {
     console.error(err);

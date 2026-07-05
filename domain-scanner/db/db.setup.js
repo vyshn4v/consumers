@@ -10,8 +10,9 @@ const pool = new Pool({
 
 module.exports = {
   query: (text, params) => pool.query(text, params),
-  updateScanStatus: async (scanId, status) => {
-    return pool.query(
+  getClient: async () => pool.connect(),
+  updateScanStatus: async (scanId, status, client = pool) => {
+    return client.query(
       `
       UPDATE scans
       SET status = $2,
@@ -21,8 +22,8 @@ module.exports = {
       [scanId, status]
     );
   },
-  saveScanResult: async (scanId, resultData) => {
-    return pool.query(
+  saveScanResult: async (scanId, resultData, client = pool) => {
+    return client.query(
       `
       INSERT INTO scan_results (scan_id, "resultData", "updated_at")
       VALUES ($1, $2, NOW())

@@ -58,10 +58,18 @@ async function consumeMessages() {
         }
 
         if (success && response) {
-          await db.query("BEGIN");
-          await db.saveScanResult(scanId, response);
-          await db.updateScanStatus(scanId, "completed");
-          await db.query("COMMIT");
+          const client = await db.getClient();
+          try {
+            await client.query("BEGIN");
+            await db.saveScanResult(scanId, response, client);
+            await db.updateScanStatus(scanId, "completed", client);
+            await client.query("COMMIT");
+          } catch (txnErr) {
+            await client.query("ROLLBACK");
+            throw txnErr;
+          } finally {
+            client.release();
+          }
           channel.ack(msg);
         } else {
           await db.updateScanStatus(scanId, "failed");
@@ -70,10 +78,9 @@ async function consumeMessages() {
       } catch (err) {
         console.error("Critical error processing message:", err);
         try {
-            await db.query("ROLLBACK");
             await db.updateScanStatus(scanId, "failed");
         } catch(dbErr) {
-            console.error("DB rollback failed:", dbErr);
+            console.error("DB update failed:", dbErr);
         }
         channel.nack(msg, false, false);
       }

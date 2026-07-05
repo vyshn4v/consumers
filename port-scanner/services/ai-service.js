@@ -24,12 +24,6 @@ Analyze this reconnaissance result with an advanced risk focus.
 
 IMPORTANT:
 Return ONLY valid JSON matching the provided schema.
-Do not include extra graph arrays or unrelated data.
-
-graph_data must include:
-- service_risk_chart: advanced risk score for each exposed service
-- risk_trend: time-series scan risk profile
-- attack_surface: summary of total, open, closed, filtered, and risky ports
 
 Requirements:
 - executive_summary should explain the exposure and risk posture clearly
@@ -41,7 +35,6 @@ Requirements:
 Focus:
 - prioritize dangerous services and their likelihood of exploitation
 - show whether the scan risk is rising, stable, or dropping over time
-- avoid introducing secondary charts like protocol distribution or port version grids
 
 NO markdown.
 NO explanations.

@@ -28,10 +28,18 @@ async function consumeMessages() {
         // Run your process here
         const response = await scanner(data);
         if (response.success) {
-          await db.query("BEGIN");
-          await db.saveScanResult(scanId, response);
-          await db.updateScanStatus(scanId, "completed");
-          await db.query("COMMIT");
+          const client = await db.getClient();
+          try {
+            await client.query("BEGIN");
+            await db.saveScanResult(scanId, response, client);
+            await db.updateScanStatus(scanId, "completed", client);
+            await client.query("COMMIT");
+          } catch (txnErr) {
+            await client.query("ROLLBACK");
+            throw txnErr;
+          } finally {
+            client.release();
+          }
           channel.ack(msg);
         } else {
           await db.updateScanStatus(scanId, "failed");
@@ -39,7 +47,6 @@ async function consumeMessages() {
         }
       } catch (err) {
         console.error(err);
-        await db.query("ROLLBACK");
         await db.updateScanStatus(scanId, "failed");
         channel.nack(msg, false, false);
       }
