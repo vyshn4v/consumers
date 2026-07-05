@@ -193,13 +193,14 @@ function generateGraphData(scan) {
     openPorts.length * 7 + severity.high * 8 + severity.critical * 15,
   );
 
+  const currentYear = new Date().getFullYear();
   const riskTrend = [
-    { time: "00:00", risk_level: Math.max(15, baselineRisk - 24) },
-    { time: "04:00", risk_level: Math.max(18, baselineRisk - 18) },
-    { time: "08:00", risk_level: Math.max(24, baselineRisk - 12) },
-    { time: "12:00", risk_level: Math.max(32, baselineRisk - 8) },
-    { time: "16:00", risk_level: Math.max(40, baselineRisk - 4) },
-    { time: "20:00", risk_level: baselineRisk },
+    { time: String(currentYear - 5), risk_level: Math.max(15, baselineRisk - 24) },
+    { time: String(currentYear - 4), risk_level: Math.max(18, baselineRisk - 18) },
+    { time: String(currentYear - 3), risk_level: Math.max(24, baselineRisk - 12) },
+    { time: String(currentYear - 2), risk_level: Math.max(32, baselineRisk - 8) },
+    { time: String(currentYear - 1), risk_level: Math.max(40, baselineRisk - 4) },
+    { time: String(currentYear), risk_level: baselineRisk },
   ];
 
   return {
